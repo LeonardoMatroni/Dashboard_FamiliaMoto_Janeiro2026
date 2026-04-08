@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Conciliação — Janeiro 2026 | Família Moto Express</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f5f5f3;
+    --surface: #ffffff;
+    --surface2: #f1efe8;
+    --border: rgba(0,0,0,0.1);
+    --border2: rgba(0,0,0,0.18);
+    --text: #1a1a18;
+    --text2: #5f5e5a;
+    --text3: #888780;
+    --radius: 10px;
+    --radius-sm: 7px;
+    --green: #1D9E75;
+    --green-bg: #E1F5EE;
+    --orange: #D85A30;
+    --orange-bg: #FAECE7;
+    --amber: #BA7517;
+    --amber-bg: #FAEEDA;
+    --purple: #7F77DD;
+    --purple-bg: #EEEDFE;
+    --red: #E24B4A;
+    --red-bg: #FCEBEB;
+    --blue: #378ADD;
+    --blue-bg: #E6F1FB;
+    --gray: #888780;
+    --gray-bg: #F1EFE8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1c1a;
+      --surface: #242422;
+      --surface2: #2c2c2a;
+      --border: rgba(255,255,255,0.1);
+      --border2: rgba(255,255,255,0.18);
+      --text: #f0ede6;
+      --text2: #b4b2a9;
+      --text3: #888780;
+      --green-bg: #085041;
+      --orange-bg: #4A1B0C;
+      --amber-bg: #412402;
+      --purple-bg: #26215C;
+      --red-bg: #501313;
+      --blue-bg: #042C53;
+      --gray-bg: #2C2C2A;
+    }
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; height: 56px; }
+  .logo { font-size: 15px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 10px; }
+  .logo-dot { width: 10px; height: 10px; border-radius: 50%; background: #378ADD; }
+  .header-sub { font-size: 12px; color: var(--text3); }
+  .main { max-width: 1300px; margin: 0 auto; padding: 1.5rem 2rem 3rem; }
+  .tabs-row { display: flex; gap: 0; border-bottom: 1.5px solid var(--border); margin-bottom: 1.5rem; }
+  .tab { padding: 10px 28px; font-size: 13px; font-weight: 500; cursor: pointer; border-bottom: 2.5px solid transparent; margin-bottom: -1.5px; color: var(--text2); transition: color .15s; user-select: none; }
+  .tab.active { color: var(--text); border-bottom-color: #378ADD; }
+  .tab:hover:not(.active) { color: var(--text); }
+  .filters { display: flex; align-items: center; gap: 12px; margin-bottom: 1.5rem; flex-wrap: wrap; }
+  .filters label { font-size: 12px; color: var(--text2); font-weight: 500; text-transform: uppercase; letter-spacing: .04em; }
+  select { font-family: inherit; font-size: 13px; padding: 7px 12px; border: 1px solid var(--border2); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); cursor: pointer; min-width: 240px; outline: none; }
+  select:focus { border-color: #378ADD; box-shadow: 0 0 0 3px rgba(55,138,221,.15); }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 1.5rem; }
+  .kpi { background: var(--surface2); border-radius: var(--radius-sm); padding: 14px 16px; }
+  .kpi-label { font-size: 11px; color: var(--text3); font-weight: 500; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 8px; }
+  .kpi-value { font-size: 24px; font-weight: 600; }
+  .kpi-sub { font-size: 11px; color: var(--text3); margin-top: 3px; }
+  .kpi.ok .kpi-value { color: var(--green); }
+  .kpi.err .kpi-value { color: var(--red); }
+  .kpi.warn .kpi-value { color: var(--amber); }
+  .kpi.info .kpi-value { color: var(--blue); }
+  .charts { display: grid; grid-template-columns: 300px 1fr; gap: 14px; margin-bottom: 14px; }
+  @media (max-width: 720px) { .charts { grid-template-columns: 1fr; } }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; }
+  .card-title { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 14px; }
+  .legend-row { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text2); margin-bottom: 6px; }
+  .legend-dot { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; }
+  .legend-val { margin-left: auto; font-weight: 600; color: var(--text); font-size: 12px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { text-align: left; padding: 7px 10px; font-size: 10px; font-weight: 600; color: var(--text3); border-bottom: 1px solid var(--border); text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; }
+  td { padding: 7px 10px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface2); }
+  .bar-wrap { height: 5px; background: var(--surface2); border-radius: 3px; margin-top: 4px; width: 100%; overflow: hidden; }
+  .bar-fill { height: 5px; border-radius: 3px; background: var(--green); transition: width .3s; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 5px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+  .badge-ok { background: var(--green-bg); color: var(--green); }
+  .badge-err { background: var(--orange-bg); color: var(--orange); }
+  .badge-warn { background: var(--amber-bg); color: var(--amber); }
+  .badge-gray { background: var(--gray-bg); color: var(--gray); }
+  .empty-msg { display: flex; align-items: center; justify-content: center; height: 140px; font-size: 13px; color: var(--text3); }
+  footer { text-align: center; padding: 1.5rem; font-size: 11px; color: var(--text3); border-top: 1px solid var(--border); margin-top: 1rem; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <span class="logo-dot"></span>
+    Família Moto Express — Conciliação Logística
+  </div>
+  <div class="header-sub">Janeiro 2026 &nbsp;|&nbsp; 99 &bull; Uber &bull; Lalamove</div>
+</header>
+
+<div class="main">
+
+  <div class="tabs-row">
+    <div class="tab active" onclick="setApp('99')">99</div>
+    <div class="tab" onclick="setApp('UBER')">Uber</div>
+    <div class="tab" onclick="setApp('LALAMOVE')">Lalamove</div>
+  </div>
+
+  <div class="filters">
+    <label>Cliente</label>
+    <select id="clienteSel" onchange="render()">
+      <option value="__all__">Todos os clientes</option>
+    </select>
+  </div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="charts">
+    <div class="card">
+      <div class="card-title">Distribuição de status</div>
+      <div style="position:relative;height:200px">
+        <canvas id="donut" role="img" aria-label="Distribuição de status por cor"></canvas>
+      </div>
+      <div id="legend" style="margin-top:16px"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Erros por cliente</div>
+      <div id="barWrap" style="position:relative;height:240px">
+        <canvas id="barChart" role="img" aria-label="Erros por cliente"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Detalhamento por cliente</div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr id="thead"></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<footer>Dashboard gerado automaticamente &mdash; Família Moto Express &mdash; Janeiro 2026</footer>
+
+<script>
+const DATA = {
+  '99': {
+    totals: { verde:12591, amarelo:66, laranja:10, azul:2, vermelho:1, sem_cor:44 },
+    errorFields: ['amarelo','laranja','azul'],
+    cancelField: 'vermelho',
+    pendField: 'sem_cor',
+    clients: {
+      'COBRA CAMPINAS':      { verde:1346, amarelo:7,  laranja:0, azul:0, vermelho:0, sem_cor:0 },
+      'COBRA CAMPO GRANDE':  { verde:1242, amarelo:12, laranja:0, azul:0, vermelho:0, sem_cor:0 },
+      'COBRA BH':            { verde:983,  amarelo:16, laranja:0, azul:0, vermelho:0, sem_cor:0 },
+      'METALSYSTEM':         { verde:868,  amarelo:8,  laranja:0, azul:0, vermelho:0, sem_cor:0 },
+      'FURACÃO OSASCO':      { verde:872,  amarelo:0,  laranja:2, azul:0, vermelho:0, sem_cor:0 },
+      'COBRA SANTO AMARO':   { verde:804,  amarelo:2,  laranja:4, azul:0, vermelho:0, sem_cor:0 },
+      'COBRA PALMAS':        { verde:721,  amarelo:1,  laranja:0, azul:0, vermelho:0, sem_cor:0 },
+      'FURACÃO SANTO ANDRÉ': { verde:713,  amarelo:0,  laranja:0, azul:0, vermelho:0, sem_cor:0 },
+      'COBRA RECIFE':        { verde:699,  amarelo:9,  laranja:0, azul:0, vermelho:0, sem_cor:0 },
+      'COBRA MONTES CLAROS': { verde:541,  amarelo:0,  laranja:3, azul:0, vermelho:1, sem_cor:0 },
+      'FURACÃO SOCORRO':     { verde:540,  amarelo:0,  laranja:0, azul:0, vermelho:0, sem_cor:0 },
+      'FURACÃO CAMBUCI':     { verde:523,  amarelo:0,  laranja:0, azul:1, vermelho:0, sem_cor:0 },
+      'FURACÃO SOROCABA':    { verde:456,  amarelo:0,  laranja:0, azul:1, vermelho:0, sem_cor:0 },
+      'COBRA OSASCO':        { verde:448,  amarelo:2,  laranja:0, azul:0, vermelho:0, sem_cor:0 },
+      'COBRA GOIANIA':       { verde:379,  amarelo:5,  laranja:0, azul:0, vermelho:0, sem_cor:0 },
+      'COBRA ITAQUA':        { verde:381,  amarelo:0,  laranja:1, azul:0, vermelho:0, sem_cor:0 },
+      'COBRA SOROCABA':      { verde:348,  amarelo:0,  laranja:0, azul:0, vermelho:0, sem_cor:0 },
+      'COBRA GRU':           { verde:257,  amarelo:0,  laranja:0, azul:0, vermelho:0, sem_cor:0 },
+      'COBRA SBC':           { verde:178,  amarelo:2,  laranja:0, azul:0, vermelho:0, sem_cor:0 },
+      'COBRA PORTO ALEGRE':  { verde:137,  amarelo:2,  laranja:0, azul:0, vermelho:0, sem_cor:0 },
+      'FURACÃO PQ NOVO MUNDO':{ verde:109, amarelo:0,  laranja:0, azul:0, vermelho:0, sem_cor:0 },
+      'SKY GUARULHOS':       { verde:34,   amarelo:0,  laranja:0, azul:0, vermelho:0, sem_cor:0 },
+      'ANCHIETA CUB':        { verde:0,    amarelo:0,  laranja:0, azul:0, vermelho:0, sem_cor:29 },
+      'ANCHIETA CAMPINAS':   { verde:0,    amarelo:0,  laranja:0, azul:0, vermelho:0, sem_cor:15 },
+      'SKY CAMPINAS':        { verde:6,    amarelo:0,  laranja:0, azul:0, vermelho:0, sem_cor:0 },
+      'FAMILIA MOTO':        { verde:4,    amarelo:0,  laranja:0, azul:0, vermelho:0, sem_cor:0 },
+      'PHIBRO':              { verde:2,    amarelo:0,  laranja:0, azul:0, vermelho:0, sem_cor:0 },
+    }
+  },
+  'UBER': {
+    totals: { verde:56, amarelo:30, laranja:12, sem_cor:39 },
+    errorFields: ['amarelo','laranja'],
+    cancelField: null,
+    pendField: 'sem_cor',
+    clients: {
+      'ANCHIETA':            { verde:0,  amarelo:0,  laranja:0,  sem_cor:38 },
+      'FURACÃO SANTO ANDRE': { verde:20, amarelo:11, laranja:6,  sem_cor:0  },
+      'FURACÃO PQ NOVO MUNDO':{ verde:11,amarelo:9,  laranja:0,  sem_cor:0  },
+      'FURACÃO CAMBUCI':     { verde:4,  amarelo:3,  laranja:6,  sem_cor:0  },
+      'FURACÃO SOCORRO':     { verde:8,  amarelo:3,  laranja:0,  sem_cor:0  },
+      'FURACÃO SOROCABA':    { verde:4,  amarelo:2,  laranja:0,  sem_cor:0  },
+      'FURACÃO OSASCO':      { verde:2,  amarelo:2,  laranja:0,  sem_cor:0  },
+      'METAL':               { verde:2,  amarelo:0,  laranja:0,  sem_cor:0  },
+      'PHIBRO':              { verde:2,  amarelo:0,  laranja:0,  sem_cor:0  },
+      'NOVATEK':             { verde:2,  amarelo:0,  laranja:0,  sem_cor:0  },
+      'COBRA CAMPO GRANDE':  { verde:1,  amarelo:0,  laranja:0,  sem_cor:0  },
+      'BETTER':              { verde:0,  amarelo:0,  laranja:0,  sem_cor:1  },
+    }
+  },
+  'LALAMOVE': {
+    totals: { verde:3656, laranja:97, roxo:10, amarelo:3, vermelho:48, sem_cor:6 },
+    errorFields: ['amarelo','laranja','roxo'],
+    cancelField: 'vermelho',
+    pendField: 'sem_cor',
+    clients: {
+      'FURACÃO SANTO ANDRE': { verde:787, laranja:29, roxo:5,  amarelo:0, vermelho:3,  sem_cor:0 },
+      'FURACÃO SOCORRO':     { verde:487, laranja:36, roxo:0,  amarelo:0, vermelho:5,  sem_cor:0 },
+      'FURACÃO OSASCO':      { verde:485, laranja:4,  roxo:0,  amarelo:0, vermelho:6,  sem_cor:0 },
+      'FURACÃO PQ N MUNDO':  { verde:367, laranja:22, roxo:0,  amarelo:0, vermelho:6,  sem_cor:0 },
+      'FURACÃO CAMBUCI':     { verde:381, laranja:4,  roxo:5,  amarelo:0, vermelho:2,  sem_cor:0 },
+      'SKY GUARULHOS':       { verde:369, laranja:0,  roxo:0,  amarelo:0, vermelho:4,  sem_cor:0 },
+      'METALSYSTEM':         { verde:324, laranja:0,  roxo:0,  amarelo:0, vermelho:8,  sem_cor:0 },
+      'SKY CAMPINAS':        { verde:196, laranja:0,  roxo:0,  amarelo:0, vermelho:4,  sem_cor:0 },
+      'FURACÃO SOROCABA':    { verde:91,  laranja:2,  roxo:0,  amarelo:3, vermelho:4,  sem_cor:0 },
+      'Auxiliar 04':         { verde:48,  laranja:0,  roxo:0,  amarelo:0, vermelho:0,  sem_cor:2 },
+      'Auxiliar 5':          { verde:49,  laranja:0,  roxo:0,  amarelo:0, vermelho:0,  sem_cor:0 },
+      'COBRA MG':            { verde:20,  laranja:0,  roxo:0,  amarelo:0, vermelho:1,  sem_cor:0 },
+      'AXALTA':              { verde:19,  laranja:0,  roxo:0,  amarelo:0, vermelho:0,  sem_cor:0 },
+      'FURACÃO TEAM AIR':    { verde:10,  laranja:0,  roxo:0,  amarelo:0, vermelho:0,  sem_cor:0 },
+      'VERIFICAR':           { verde:7,   laranja:0,  roxo:0,  amarelo:0, vermelho:1,  sem_cor:1 },
+      'Auxiliar 2':          { verde:4,   laranja:0,  roxo:0,  amarelo:0, vermelho:3,  sem_cor:0 },
+      'Camille':             { verde:4,   laranja:0,  roxo:0,  amarelo:0, vermelho:0,  sem_cor:1 },
+      'MetalSystem':         { verde:4,   laranja:0,  roxo:0,  amarelo:0, vermelho:0,  sem_cor:0 },
+      'LIDER':               { verde:2,   laranja:0,  roxo:0,  amarelo:0, vermelho:0,  sem_cor:1 },
+      'Auxiliar 1':          { verde:2,   laranja:0,  roxo:0,  amarelo:0, vermelho:1,  sem_cor:0 },
+    }
+  }
+};
+
+const LABELS = {
+  verde:'Conciliado', amarelo:'Não consta (amarelo)', laranja:'NF duplicada (laranja)',
+  roxo:'App + fixo (roxo)', vermelho:'Cancelado', azul:'Consta só no app (azul)', sem_cor:'Sem planilha'
+};
+const COLORS = {
+  verde:'#1D9E75', amarelo:'#BA7517', laranja:'#D85A30',
+  roxo:'#7F77DD', vermelho:'#E24B4A', azul:'#378ADD', sem_cor:'#888780'
+};
+
+let currentApp = '99';
+let donutChart = null, barChartInst = null;
+
+function setApp(app) {
+  currentApp = app;
+  document.querySelectorAll('.tab').forEach((t, i) =>
+    t.classList.toggle('active', ['99','UBER','LALAMOVE'][i] === app)
+  );
+  const sel = document.getElementById('clienteSel');
+  sel.innerHTML = '<option value="__all__">Todos os clientes</option>';
+  Object.keys(DATA[app].clients).forEach(c => {
+    const o = document.createElement('option');
+    o.value = c; o.textContent = c; sel.appendChild(o);
+  });
+  render();
+}
+
+function getSelected() {
+  const v = document.getElementById('clienteSel').value;
+  const app = DATA[currentApp];
+  if (v === '__all__') return { clients: app.clients, totals: app.totals };
+  const c = app.clients[v] || {};
+  const totals = {};
+  Object.keys(c).forEach(k => totals[k] = c[k]);
+  return { clients: { [v]: c }, totals };
+}
+
+function sum(obj, keys) { return keys.reduce((a, k) => a + (obj[k] || 0), 0); }
+
+function fmt(n) { return n.toLocaleString('pt-BR'); }
+
+function render() {
+  const app = DATA[currentApp];
+  const { clients, totals } = getSelected();
+  const ef = app.errorFields;
+  const cf = app.cancelField;
+  const pf = app.pendField;
+
+  const total = Object.values(totals).reduce((a, b) => a + b, 0);
+  const ok = totals.verde || 0;
+  const erros = sum(totals, ef);
+  const cancel = cf ? (totals[cf] || 0) : 0;
+  const pend = totals[pf] || 0;
+  const taxaOk = total > 0 ? Math.round(ok / total * 100) : 0;
+
+  document.getElementById('kpis').innerHTML = `
+    <div class="kpi">
+      <div class="kpi-label">Total pedidos</div>
+      <div class="kpi-value">${fmt(total)}</div>
+    </div>
+    <div class="kpi ok">
+      <div class="kpi-label">Conciliados</div>
+      <div class="kpi-value">${fmt(ok)}</div>
+      <div class="kpi-sub">${taxaOk}% do total</div>
+    </div>
+    <div class="kpi err">
+      <div class="kpi-label">Com erro</div>
+      <div class="kpi-value">${fmt(erros)}</div>
+      <div class="kpi-sub">${total > 0 ? Math.round(erros / total * 100) : 0}% do total</div>
+    </div>
+    ${cf ? `<div class="kpi warn">
+      <div class="kpi-label">Cancelados</div>
+      <div class="kpi-value">${fmt(cancel)}</div>
+      <div class="kpi-sub">${total > 0 ? Math.round(cancel / total * 100) : 0}% do total</div>
+    </div>` : ''}
+    <div class="kpi info">
+      <div class="kpi-label">Sem planilha</div>
+      <div class="kpi-value">${fmt(pend)}</div>
+    </div>
+  `;
+
+  // Donut
+  const allFields = ['verde', ...ef, ...(cf ? [cf] : []), pf]
+    .filter((v, i, a) => a.indexOf(v) === i && (totals[v] || 0) > 0);
+  const donutData = allFields.map(f => totals[f] || 0);
+  const donutColors = allFields.map(f => COLORS[f]);
+
+  if (donutChart) donutChart.destroy();
+  donutChart = new Chart(document.getElementById('donut'), {
+    type: 'doughnut',
+    data: {
+      labels: allFields.map(f => LABELS[f]),
+      datasets: [{ data: donutData, backgroundColor: donutColors, borderWidth: 2, borderColor: 'transparent', hoverOffset: 5 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '68%',
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => { const v = ctx.raw; const pct = total > 0 ? Math.round(v / total * 100) : 0; return ` ${fmt(v)} (${pct}%)`; } } }
+      }
+    }
+  });
+
+  document.getElementById('legend').innerHTML = allFields.map(f =>
+    `<div class="legend-row">
+      <span class="legend-dot" style="background:${COLORS[f]}"></span>
+      <span>${LABELS[f]}</span>
+      <span class="legend-val">${fmt(totals[f] || 0)}</span>
+    </div>`
+  ).join('');
+
+  // Bar chart
+  const cliErr = Object.entries(clients)
+    .map(([name, c]) => ({ name, erros: sum(c, ef) }))
+    .filter(x => x.erros > 0)
+    .sort((a, b) => b.erros - a.erros)
+    .slice(0, 15);
+
+  const barH = Math.max(180, cliErr.length * 42 + 70);
+  const barWrap = document.getElementById('barWrap');
+  barWrap.style.height = barH + 'px';
+
+  if (barChartInst) barChartInst.destroy();
+
+  if (cliErr.length === 0) {
+    barWrap.innerHTML = '<div class="empty-msg">Nenhum erro para o filtro selecionado</div>';
+  } else {
+    barWrap.innerHTML = '<canvas id="barChart" role="img" aria-label="Erros por cliente"></canvas>';
+    barChartInst = new Chart(document.getElementById('barChart'), {
+      type: 'bar',
+      data: {
+        labels: cliErr.map(x => x.name),
+        datasets: [{ label: 'Erros', data: cliErr.map(x => x.erros), backgroundColor: '#D85A30cc', borderRadius: 4, borderSkipped: false }]
+      },
+      options: {
+        indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.raw} erros` } } },
+        scales: {
+          x: { grid: { color: 'rgba(128,128,128,.1)' }, ticks: { color: '#888', font: { size: 11 }, stepSize: 1 } },
+          y: { grid: { display: false }, ticks: { color: '#555', font: { size: 11 } } }
+        }
+      }
+    });
+  }
+
+  // Table
+  const hasCan = !!cf;
+  document.getElementById('thead').innerHTML = `
+    <th>Cliente</th>
+    <th style="text-align:right">Total</th>
+    <th style="text-align:right">Conciliados</th>
+    <th style="text-align:right">Erros</th>
+    ${hasCan ? '<th style="text-align:right">Cancel.</th>' : ''}
+    <th style="text-align:right">Sem planilha</th>
+    <th>Status</th>
+  `;
+
+  const rows = Object.entries(clients).sort((a, b) => sum(b[1], ef) - sum(a[1], ef));
+  document.getElementById('tbody').innerHTML = rows.map(([name, c]) => {
+    const tot = Object.values(c).reduce((a, b) => a + b, 0);
+    const ok = c.verde || 0;
+    const err = sum(c, ef);
+    const can = cf ? (c[cf] || 0) : 0;
+    const pnd = c[pf] || 0;
+    const pct = tot > 0 ? Math.round(ok / tot * 100) : 0;
+    const badge = err > 0 ? 'badge-err' : (pnd > 0 ? 'badge-warn' : 'badge-ok');
+    const badgeTxt = err > 0 ? `${err} erro${err > 1 ? 's' : ''}` : (pnd > 0 ? 'sem planilha' : 'OK');
+    return `<tr>
+      <td style="font-weight:500">${name}</td>
+      <td style="text-align:right">${fmt(tot)}</td>
+      <td style="text-align:right">
+        <div>${fmt(ok)}</div>
+        <div class="bar-wrap"><div class="bar-fill" style="width:${pct}%"></div></div>
+      </td>
+      <td style="text-align:right;color:${err > 0 ? '#D85A30' : 'var(--text3)'};font-weight:${err > 0 ? 600 : 400}">${err || '—'}</td>
+      ${hasCan ? `<td style="text-align:right;color:${can > 0 ? '#E24B4A' : 'var(--text3)'}">${can || '—'}</td>` : ''}
+      <td style="text-align:right;color:${pnd > 0 ? '#BA7517' : 'var(--text3)'}">${pnd || '—'}</td>
+      <td><span class="badge ${badge}">${badgeTxt}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+setApp('99');
+</script>
+</body>
+</html>
